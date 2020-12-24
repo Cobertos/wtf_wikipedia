@@ -1,7 +1,7 @@
 const Section = require('./Section')
 const i18n = require('../_data/i18n')
 const isReference = new RegExp('^(' + i18n.references.join('|') + '):?', 'i')
-const section_reg = /(?:\n|^)(={2,5}.{1,200}?={2,5})/g
+const section_reg = /(?:\n|^)(={2,5}.{1,200}?={2,5})/
 
 //interpret ==heading== lines
 const parse = {
@@ -49,18 +49,45 @@ const removeReferenceSection = function (sections) {
 
 const parseSections = function (doc) {
   let sections = []
-  let split = doc._wiki.split(section_reg)
-  for (let i = 0; i < split.length; i += 2) {
-    let heading = split[i - 1] || ''
-    let wiki = split[i] || ''
-    if (wiki === '' && heading === '') {
-      //usually an empty 'intro' section
-      continue
+  let restWiki = doc._wiki;
+  let restWikiIndex = 0;
+  while(true) {
+    let headingMatch = restWiki.match(section_reg);
+    if (!headingMatch) {
+      break; //No more sections
     }
+    let wiki, heading, wikiIndex;
+    if (headingMatch.index !== 0) {
+      // Implicit section before...
+      wiki = restWiki.slice(0, headingMatch.index);
+      wikiIndex = restWikiIndex;
+      heading = '';
+      restWikiIndex += headingMatch.index;
+      restWiki = restWiki.slice(headingMatch.index);
+    }
+    else {
+      wiki = restWiki.slice(0, headingMatch.index);
+      wikiIndex = restWikiIndex;
+      heading = headingMatch[1]; // First capture group
+      let nextSectionIndex = headingMatch.index + headingMatch[0].length;
+      restWikiIndex += nextSectionIndex;
+      restWiki = restWiki.slice(nextSectionIndex);
+      if (wiki === '' && heading === '') {
+        //usually an empty 'intro' section
+        continue
+      }
+    }
+
+    console.log(wiki);
+    console.log(heading);
+    console.log(restWiki);
+
     let section = {
       title: '',
       depth: null,
-      wiki: wiki,
+      wiki,
+      wikiStart: wikiIndex,
+      wikiLength: wiki.length,
       templates: [],
       tables: [],
       infoboxes: [],
@@ -72,6 +99,7 @@ const parseSections = function (doc) {
     let s = oneSection(section, doc)
     sections.push(s)
   }
+
   //remove empty references section
   return removeReferenceSection(sections)
 }

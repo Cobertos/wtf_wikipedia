@@ -13,7 +13,11 @@ i believe that 5===true and y===false
     .map((s) => s.json())
   t.equal(sections.length, 2, 'two-sections')
   t.equal(sections[0].title, '', 'implicit-section')
+  t.equal(sections[0].start, 0, 'implicit-section start')
+  t.equal(sections[0].length, 0, 'implicit-section length')
   t.equal(sections[1].title, 'Foo Bar', 'clean-section')
+  t.equal(sections[1].start, 7, 'clean-section start')
+  t.equal(sections[1].length, 32, 'clean-section length')
   t.end()
 })
 
